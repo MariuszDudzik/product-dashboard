@@ -5,7 +5,7 @@ name: CI Pipeline — Product Dashboard
 on:
   # Uruchom po pushu do gałęzi main
   push:
-    branches: [main]
+    branches: [master]
 
     # Nie uruchamiaj CI dla zmian wyłącznie w dokumentacji
     paths-ignore:
@@ -14,7 +14,7 @@ on:
 
   # Uruchom również dla Pull Requestów do main
   pull_request:
-    branches: [main]
+    branches: [master]
 
     # Ignoruj zmiany dokumentacyjne
     paths-ignore:
