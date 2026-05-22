@@ -26,7 +26,7 @@ jobs:
     timeout-minutes: 5
     defaults:
       run:
-        working-directory: backend
+        working-directory: Backend
 
     steps:
       - name: Checkout repository
@@ -37,7 +37,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: backend/package-lock.json
+          cache-dependency-path: Backend/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -55,7 +55,7 @@ jobs:
     timeout-minutes: 10
     defaults:
       run:
-        working-directory: backend
+        working-directory: Backend
 
     strategy:
       matrix:
@@ -70,7 +70,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
-          cache-dependency-path: backend/package-lock.json
+          cache-dependency-path: Backend/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -83,7 +83,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-report-node-${{ matrix.node-version }}
-          path: backend/test-report.txt
+          path: Backend/test-report.txt
           retention-days: 7
 
       - name: Write step summary
@@ -107,7 +107,7 @@ jobs:
     timeout-minutes: 5
     defaults:
       run:
-        working-directory: backend
+        working-directory: Backend
 
     steps:
       - name: Checkout repository
@@ -118,7 +118,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: backend/package-lock.json
+          cache-dependency-path: Backend/package-lock.json
 
       - name: Install dependencies
         run: npm ci
