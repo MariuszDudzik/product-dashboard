@@ -1,107 +1,70 @@
-# Nazwa workflow widoczna w zakładce GitHub Actions
 name: CI Pipeline — Product Dashboard
 
-# Zdarzenia uruchamiające pipeline
 on:
-  # Uruchom po pushu do gałęzi main
   push:
-    branches: [master]
-
-    # Nie uruchamiaj CI dla zmian wyłącznie w dokumentacji
+    branches: [main]
     paths-ignore:
       - '**.md'
       - 'docs/**'
-
-  # Uruchom również dla Pull Requestów do main
   pull_request:
-    branches: [master]
-
-    # Ignoruj zmiany dokumentacyjne
+    branches: [main]
     paths-ignore:
       - '**.md'
       - 'docs/**'
 
-# Globalna zmienna środowiskowa
 env:
   NODE_VERSION: '20'
 
 jobs:
 
-  # ===============================================================
-  # JOB 1 - LINT
-  # Sprawdza jakość kodu i błędy składniowe
-  # ===============================================================
+  # ────────────────────────────────────────────────────────────────
+  # JOB 1: LINT
+  # ────────────────────────────────────────────────────────────────
   lint:
     name: Lint
-
-    # System operacyjny runnera GitHub Actions
     runs-on: ubuntu-latest
-
-    # Maksymalny czas wykonania joba
     timeout-minutes: 5
-
-    # Wszystkie komendy run będą wykonywane w katalogu backend
     defaults:
       run:
         working-directory: backend
 
     steps:
-
-      # Pobranie kodu repozytorium
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Instalacja odpowiedniej wersji Node.js
       - name: Setup Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-
-          # Włączenie cache npm dla szybszych buildów
           cache: 'npm'
-
-          # Plik używany do wyliczania cache
           cache-dependency-path: backend/package-lock.json
 
-      # Instalacja zależności zgodnie z package-lock.json
       - name: Install dependencies
         run: npm ci
 
-      # Uruchomienie ESLint lub innego lintera
       - name: Run lint (syntax check)
         run: npm run lint
 
-  # ===============================================================
-  # JOB 2 - TESTY
-  # Testowanie aplikacji na kilku wersjach Node.js
-  # ===============================================================
+  # ────────────────────────────────────────────────────────────────
+  # JOB 2: TEST (matrix — Node 18, 20, 22)
+  # ────────────────────────────────────────────────────────────────
   test:
     name: Tests (Node ${{ matrix.node-version }})
-
     runs-on: ubuntu-latest
-
-    # Job uruchomi się dopiero po poprawnym zakończeniu lint
     needs: lint
-
     timeout-minutes: 10
-
     defaults:
       run:
         working-directory: backend
 
-    # Matrix pozwala uruchomić ten sam zestaw testów
-    # równolegle dla różnych wersji Node.js
     strategy:
       matrix:
         node-version: [18, 20, 22]
 
     steps:
-
-      # Pobranie kodu repozytorium
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Instalacja aktualnie testowanej wersji Node
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
@@ -109,29 +72,20 @@ jobs:
           cache: 'npm'
           cache-dependency-path: backend/package-lock.json
 
-      # Instalacja zależności
       - name: Install dependencies
         run: npm ci
 
-      # Uruchomienie testów jednostkowych/integracyjnych
       - name: Run tests
         run: npm test
 
-      # Zapis raportu testów tylko dla Node 20
-      # always() powoduje wykonanie nawet po nieudanych testach
       - name: Upload test report (only Node 20)
         if: matrix.node-version == 20 && always()
         uses: actions/upload-artifact@v4
         with:
           name: test-report-node-${{ matrix.node-version }}
-
-          # Plik raportu generowany przez testy
           path: backend/test-report.txt
-
-          # Liczba dni przechowywania artefaktu
           retention-days: 7
 
-      # Dodanie podsumowania do GitHub Actions
       - name: Write step summary
         if: matrix.node-version == 20
         run: |
@@ -143,31 +97,22 @@ jobs:
           echo "| Runner OS | ubuntu-latest |" >> $GITHUB_STEP_SUMMARY
           echo "| Status | 🟢 Passed |" >> $GITHUB_STEP_SUMMARY
 
-  # ===============================================================
-  # JOB 3 - BUILD
-  # Budowanie aplikacji po przejściu testów
-  # ===============================================================
+  # ────────────────────────────────────────────────────────────────
+  # JOB 3: BUILD
+  # ────────────────────────────────────────────────────────────────
   build:
     name: Build
-
     runs-on: ubuntu-latest
-
-    # Build uruchomi się tylko gdy wszystkie testy zakończą się sukcesem
     needs: test
-
     timeout-minutes: 5
-
     defaults:
       run:
         working-directory: backend
 
     steps:
-
-      # Pobranie kodu repozytorium
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Konfiguracja Node.js
       - name: Setup Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4
         with:
@@ -175,15 +120,12 @@ jobs:
           cache: 'npm'
           cache-dependency-path: backend/package-lock.json
 
-      # Instalacja zależności
       - name: Install dependencies
         run: npm ci
 
-      # Kompilacja/budowanie aplikacji
       - name: Run build
         run: npm run build
 
-      # Utworzenie raportu builda w GitHub Actions
       - name: Write build summary
         run: |
           echo "## 🏗️ Build Report" >> $GITHUB_STEP_SUMMARY
@@ -191,12 +133,6 @@ jobs:
           echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
           echo "| Node version | ${{ env.NODE_VERSION }} |" >> $GITHUB_STEP_SUMMARY
-
-          # Hash aktualnego commita
           echo "| Commit SHA | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
-
-          # Nazwa gałęzi
           echo "| Branch | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
-
-          # Status builda
           echo "| Build status | ✅ Success |" >> $GITHUB_STEP_SUMMARY
