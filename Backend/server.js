@@ -40,3 +40,4 @@ app.get('/stats', (req, res) => {
 });
 
 app.listen(3000, () => console.log('Backend running on port 3000'));"console.error('BROKEN')" 
+"console.error('BROKEN')" 
